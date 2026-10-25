@@ -44,7 +44,6 @@ CombatEvent.OnServerEvent:Connect(function(player, targetList, damage)
 				end
 				
 				KillHandler.ProcessDamage(player, targetHumanoid, damage)
-				--targetHumanoid:TakeDamage(damage)
 			end
 		end
 	end
