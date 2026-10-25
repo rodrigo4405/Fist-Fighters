@@ -69,15 +69,13 @@ if regenTask then
 end
 
 regenTask = task.spawn(function()
-	while true do
+	while task.wait(1) do
 		if os.clock() - lastBlockStrengthDrain < config.BlockStrengthRegenDelay then continue end
 
 		if blockStrength < config.MaxBlockStrength then
 			blockStrength = math.min(config.MaxBlockStrength, blockStrength + config.BlockStrengthRegenRate)
 			blockBar.Size = UDim2.new(blockStrength / config.MaxBlockStrength, 0, 1, 0)
 		end
-		
-		task.wait(1)
 	end
 end)
 	

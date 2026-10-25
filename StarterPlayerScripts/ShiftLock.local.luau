@@ -18,10 +18,15 @@ cursorImage.Parent = mouseLockController
 local boundKeys = mouseLockController:WaitForChild("BoundKeys")
 boundKeys.Value = Keybinds.Get("Shiftlock").Name
 
-local conn = nil
 local rayParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
 rayParams.RespectCanCollide = true
+
+local function unbindCollision() 
+	pcall(function()
+		RunService:UnbindFromRenderStep("CameraCollision")
+	end)
+end
 
 local function applyLockState(humanoid)
 	local cursor = player.PlayerGui:WaitForChild("Shiftlock").Frame
@@ -30,14 +35,17 @@ local function applyLockState(humanoid)
 		humanoid.CameraOffset = Vector3.new(1, 0.5, 0)
 		UserInputService.MouseIconEnabled = false
 		cursor.Visible = true
-		
+
 		local character = humanoid.Parent
-		local head = character:FindFirstChild("Head")
 		rayParams.FilterDescendantsInstances = {character}
-		conn = RunService:BindToRenderStep(
+
+		unbindCollision() 
+		RunService:BindToRenderStep( 
 			"CameraCollision",
 			Enum.RenderPriority.Camera.Value + 1,
 			function()
+				local head = character:FindFirstChild("Head")
+				if not head then return end 
 				local origin = head.Position
 				local cameraPos = Camera.CFrame.Position
 				local direction = cameraPos - origin
@@ -50,12 +58,12 @@ local function applyLockState(humanoid)
 				end
 			end
 		)
-		
+
 	elseif UserInputService.MouseBehavior == Enum.MouseBehavior.Default then
 		humanoid.CameraOffset = Vector3.new(0, 0, 0)
 		UserInputService.MouseIconEnabled = true
 		cursor.Visible = false
-		if conn then conn:Disconnect() end
+		unbindCollision() 
 	end
 end
 

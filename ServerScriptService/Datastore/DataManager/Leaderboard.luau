@@ -63,18 +63,27 @@ function Leaderboard:Initialize()
 	end)
 end
 
-function Leaderboard:UpdateLeaderboard(player, value: number): boolean
+function Leaderboard:UpdateLeaderboard(player, value: number): boolean -- i should change the name
 	if RunService:IsStudio() and not CONFIG.KEEP_SAVES_STUDIO then return true end
-	if not tonumber(value) then return false end
+	if not tonumber(value) or not math.isfinite(value) then return false end
 
-	local userId = (tonumber(player) or tostring(player.UserId))
+	local userId
+	if type(player) == "number" then
+		userId = player
+	elseif typeof(player) == "Instance" and player:IsA("Player") then
+		userId = player.UserId
+	else
+		return false
+	end
+	userId = tostring(userId)
+	
 	value = math.floor(tonumber(value))
 	local success, err = pcall(function()
 		self.LeaderboardStore:SetAsync(userId, value)
 	end)
 
 	if not success then
-		warn("Leaderboard update failed! " .. err)
+		warn("Leaderboard update failed! " .. tostring(err))
 		return false
 	end
 
@@ -91,7 +100,8 @@ function Leaderboard:GetPlayerStats(userId: number): (boolean, number)
 	local success, result = pcall(function()
 		return self.LeaderboardStore:GetAsync(tostring(userId))
 	end)
-
+	
+	if not success then return false, 0 end
 	return success, result or 0
 end
 
@@ -104,40 +114,15 @@ function Leaderboard:GetLeaderboard(length: number)
 		return self.LeaderboardStore:GetSortedAsync(false, length)
 	end)
 
-	if not success then return nil end
+	if not success then
+		return self.LeaderboardCache and Utils.deepcopy(self.LeaderboardCache) or nil
+	end
 
 	local result = pages:GetCurrentPage()
 	self.LeaderboardCache = Utils.deepcopy(result)
 	self.LeaderboardCacheExpiry = os.clock() + CONFIG.LEADERBOARD_CACHE_DURATION
 
 	return result
-end
-
-function Leaderboard:Reset()
-	if RunService:IsStudio() and not CONFIG.KEEP_SAVES_STUDIO then return true end
-
-	local success, pages = pcall(function()
-		return self.LeaderboardStore:GetSortedAsync(false, 100)
-	end)
-
-	if not success then return false end
-
-	while true do
-		local page = pages:GetCurrentPage()
-		for _, entry in ipairs(page) do
-			local userId = entry.key
-			local removeSuccess, err = pcall(function()
-				return self.LeaderboardStore:RemoveAsync(userId)
-			end)
-		end
-		if pages.IsFinished then
-			break
-		end
-		pages:AdvanceToNextPageAsync()
-	end
-	self.LeaderboardCache = nil
-	self.LeaderboardCacheExpiry = 0
-	return true
 end
 
 return Leaderboard
