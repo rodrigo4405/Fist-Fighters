@@ -160,7 +160,7 @@ playBtn.MouseButton1Click:Connect(function()
 	mainMenuGui:Destroy()
 	mainMenuMusic:Stop()
 	
-	SoundManager.StartBackgroundMusic()
+	--SoundManager.StartBackgroundMusic()
 end)
 
 -- todo: bypass main menu on studio session

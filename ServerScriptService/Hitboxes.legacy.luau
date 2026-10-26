@@ -10,8 +10,16 @@ local CombatEvent = ReplicatedStorage.RemoteEvents.CombatEvent
 local BlockStrengthEvent = ReplicatedStorage.RemoteEvents.BlockStrengthEvent
 
 CombatEvent.OnServerEvent:Connect(function(player, targetList, damage)
-	if not player or not player:IsA("Player") or player.Parent ~= Players then return end
-	local character = player.Character
+	local character
+
+	if player and player:IsA("Player") and player.Parent == Players then
+		character = player.Character
+	else
+		if not player or not player:IsA("Model") or not player:IsDescendantOf(workspace.Zombies) then return end
+		player:TakeDamage(damage)
+		return
+	end
+
 	if not character then return end
 
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
