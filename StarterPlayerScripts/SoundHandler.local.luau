@@ -7,7 +7,7 @@ local SoundManager = require(ReplicatedStorage.Modules.SoundManager)
 
 PlaySound.OnClientEvent:Connect(function(player, sound, parent: Instance)
 	if not player or player.Parent ~= game:GetService("Players") then return end
-	if not parent:IsA("Instance") then return end
+	if not parent or not parent:IsA("Instance") then return end
 
 	if not sound then
 		warn("SoundHandler: SFX '" .. sound .. "' not found")

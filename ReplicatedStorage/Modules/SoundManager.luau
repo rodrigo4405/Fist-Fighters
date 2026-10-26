@@ -1,6 +1,9 @@
+local FADE_TIME = 3
+
 local SoundManager = {}
 
 local SoundService = game:GetService("SoundService")
+local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SFXFolder = SoundService:WaitForChild("SFX")
@@ -8,7 +11,15 @@ local MusicFolder = SoundService:WaitForChild("Music")
 local PlaySound = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("PlaySound")
 
 SoundManager.SFX = {}
-SoundManager.Music = {} 
+SoundManager.Music = {}
+
+local function fade(sound, duration, volume)
+	local tweenInfo = TweenInfo.new(duration)
+	local tween = TweenService:Create(sound, tweenInfo, {Volume = volume})
+	
+	tween:Play()
+	return tween
+end
 
 local function loadSoundEffects(current, path)
 	for _, object in current:GetChildren() do
@@ -49,11 +60,22 @@ playingFolder.Name = "Playing"
 playingFolder.Parent = SoundService
 
 function SoundManager.PlaySFX(sound, parent)
+	if not parent then 
+		local character = game:GetService("Players").LocalPlayer.Character
+		if not character then return end
+		local hrp = character:FindFirstChild("HumanoidRootPart")
+		if not hrp then return end
+		
+		parent = hrp
+	end
+
 	if type(sound) ~= "table" then
 		sound:Play()
 		PlaySound:FireServer(sound, parent) 
 		return
 	end
+	
+	if #sound == 0 then return end
 	
 	local index = math.random(1, #sound)
 	local s = sound[index]
@@ -69,17 +91,31 @@ function SoundManager.PlayMusic(music: Sound, volume: number?, looped: boolean?)
 	
 	local newMusic = music:Clone()
 	newMusic.Parent = playingFolder
-	newMusic.Looped = looped
-	newMusic.Volume = volume or music.Volume
+	newMusic.Looped = looped or false
+	newMusic.Volume = 0
 	newMusic:Play()
+	fade(newMusic, FADE_TIME, volume or music.Volume)
 	
-	newMusic.Ended:Once(function()
-		newMusic:Destroy()
+	local conn
+	conn = newMusic:GetPropertyChangedSignal("TimePosition"):Connect(function()
+		if newMusic.TimeLength == 0 then return end
+		if newMusic.TimeLength - newMusic.TimePosition <= FADE_TIME then
+			conn:Disconnect()
+			
+			local tween = fade(newMusic, FADE_TIME, 0)
+			tween.Completed:Wait()
+			newMusic:Destroy()
+		end
+	end)
+	
+	newMusic.Destroying:Once(function()
+		if conn.Connected then
+			conn:Disconnect()
+		end
 	end)
 
 	return newMusic
 end
-
 
 local playingBackground = false
 local playingThread = nil

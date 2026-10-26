@@ -40,6 +40,7 @@ function Leaderboard.new(storeName, shortName: string, length: number?, refreshI
 end
 
 local function refreshLeaderboard(self)
+	print(debug.info(2, "sln"))
 	self.LeaderboardCacheExpiry = 0
 	local data = self:GetLeaderboard(self.Length)
 	if not data then return end
@@ -109,7 +110,7 @@ function Leaderboard:GetLeaderboard(length: number)
 	if self.LeaderboardCache ~= nil and os.clock() < self.LeaderboardCacheExpiry then
 		return Utils.deepcopy(self.LeaderboardCache)
 	end
-
+	
 	local success, pages = pcall(function()
 		return self.LeaderboardStore:GetSortedAsync(false, length)
 	end)

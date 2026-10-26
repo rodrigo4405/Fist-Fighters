@@ -64,18 +64,23 @@ local function getDataStore(self, name)
 end
 
 local function saveData(self, userId, data, name)
+	local start = os.clock()
 	if RunService:IsStudio() and not CONFIG.KEEP_SAVES_STUDIO then return true end
-
-	if self.PlayerDataChanged[userId] ~= nil and not self.PlayerDataChanged[userId] then return true end -- dont skip saving when data change is nil
 
 	name = name or self.StoreName
 	local store = getDataStore(self, name)
-	local backup = Utils.deepcopy(data)
-	
+
 	self.PendingSaves += 1
 	while self.Saving[userId] do task.wait() end
-	self.Saving[userId] = true
 	
+	if self.PlayerDataChanged[userId] == false then
+		self.PendingSaves -= 1
+		return true
+	end 
+	
+	self.PlayerDataChanged[userId] = false
+	self.Saving[userId] = true
+	local backup = Utils.deepcopy(data)
 
 	local success, result = Utils.retry(function()
 		return store:UpdateAsync(tostring(userId), function() return backup end)
@@ -84,7 +89,8 @@ local function saveData(self, userId, data, name)
 	self.PendingSaves -= 1
 	self.Saving[userId] = nil
 	
-	if success then self.PlayerDataChanged[userId] = false end
+	if not success then self.PlayerDataChanged[userId] = true end
+	if success then print(("Saved data in %.2fs"):format(os.clock() - start)) end
 	return success
 end
 
