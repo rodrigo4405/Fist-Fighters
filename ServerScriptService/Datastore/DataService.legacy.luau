@@ -59,6 +59,8 @@ saveKeybind.OnServerEvent:Connect(function(player: Player, changes: {[string]: E
 end)
 
 saveSetting.OnServerEvent:Connect(function(player: Player, setting: {[string]: any})
+	-- i could validate values but its their own settings if they want to make their volume 1000 they are free to blast their ears
+	-- reconcile data already takes care of fields and types so
 	local data = {Settings = table.clone(setting)}
 	playerStore:Set(player, data)
 end)

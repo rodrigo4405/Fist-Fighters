@@ -10,6 +10,9 @@ local SFXFolder = SoundService:WaitForChild("SFX")
 local MusicFolder = SoundService:WaitForChild("Music")
 local PlaySound = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("PlaySound")
 
+local Signal = require(ReplicatedStorage.Modules.Signal)
+SoundManager.TrackFinished = Signal.new()
+
 SoundManager.SFX = {}
 SoundManager.Music = {}
 
@@ -32,12 +35,14 @@ local function loadSoundEffects(current, path)
 			for _, sound in object:GetChildren() do
 				if sound:IsA("Sound") then
 					table.insert(sounds, sound)
+					sound.SoundGroup = SFXFolder
 				end
 			end
 
 			path[object.Name] = sounds
 		elseif object:IsA("Sound") then
 			path[object.Name] = object
+			object.SoundGroup = SFXFolder
 		end
 	end
 end
@@ -48,6 +53,7 @@ local function loadMusic(current)
 			loadMusic(object)
 		elseif object:IsA("Sound") and object.Name ~= "MainMenuMusic" then
 			table.insert(SoundManager.Music, object)
+			object.SoundGroup = MusicFolder
 		end
 	end
 end
@@ -93,27 +99,32 @@ function SoundManager.PlayMusic(music: Sound, volume: number?, looped: boolean?)
 	newMusic.Parent = playingFolder
 	newMusic.Looped = looped or false
 	newMusic.Volume = 0
-	newMusic:Play()
-	fade(newMusic, FADE_TIME, volume or music.Volume)
 	
-	local conn
-	conn = newMusic:GetPropertyChangedSignal("TimePosition"):Connect(function()
-		if newMusic.TimeLength == 0 then return end
-		if newMusic.TimeLength - newMusic.TimePosition <= FADE_TIME then
-			conn:Disconnect()
-			conn = nil
-			
-			local tween = fade(newMusic, FADE_TIME, 0)
-			tween.Completed:Wait()
+	
+	if not newMusic.IsLoaded then
+		newMusic.Loaded:Wait()
+	end
+	
+	local finished = false
+	local function finish()
+		if finished then return end
+		finished = true
+		SoundManager.TrackFinished:Fire()
+		if newMusic.Parent then
 			newMusic:Destroy()
 		end
-	end)
-	
-	newMusic.Destroying:Once(function()
-		if conn then
-			conn:Disconnect()
-			conn = nil
-		end
+	end
+
+	newMusic.Ended:Once(finish)
+	newMusic.Destroying:Once(finish)
+
+	newMusic:Play()
+	fade(newMusic, FADE_TIME, volume or music.Volume)
+
+	local remaining = newMusic.TimeLength - newMusic.TimePosition - FADE_TIME
+	task.delay(math.max(remaining, 0), function()
+		if finished then return end
+		fade(newMusic, FADE_TIME, 0).Completed:Once(finish)
 	end)
 
 	return newMusic
@@ -152,7 +163,7 @@ function SoundManager.StartBackgroundMusic(volume: number?)
 				continue
 			end
 			
-			music.Destroying:Wait()
+			local finishedTrack = SoundManager.TrackFinished:Wait()
 		end
 	end)
 end

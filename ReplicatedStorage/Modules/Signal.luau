@@ -28,6 +28,16 @@ function Signal:Fire(...)
 	end
 end
 
+function Signal:Wait()
+	local thread = coroutine.running()
+	local connection
+	connection = self:Connect(function(...)
+		connection:Disconnect()
+		task.spawn(thread, ...)
+	end)
+	return coroutine.yield()
+end
+
 function Signal:Destroy()
 	table.clear(self._listeners)
 end

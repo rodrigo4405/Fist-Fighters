@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PlaySound = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("PlaySound")
 
 local SoundManager = require(ReplicatedStorage.Modules.SoundManager)
+local SFXGroup = SoundService:WaitForChild("SFX")
 
 PlaySound.OnClientEvent:Connect(function(player, sound, parent: Instance)
 	if not player or player.Parent ~= game:GetService("Players") then return end
@@ -27,6 +28,8 @@ PlaySound.OnClientEvent:Connect(function(player, sound, parent: Instance)
 
 	local newSound = sound:Clone()
 	newSound.Parent = parent
+	newSound.SoundGroup = SFXGroup
+	print("PLAYING", newSound.Name, newSound.SoundGroup, newSound.SoundGroup and newSound.SoundGroup.Volume)
 	newSound:Play()
 
 	newSound.Ended:Once(function()
