@@ -12,6 +12,10 @@ local Keybinds = require(ReplicatedStorage.Modules.Keybinds)
 local Falling = require(ReplicatedStorage.Modules.Movement.Falling)
 local Dash = require(ReplicatedStorage.Modules.Movement.Dash)
 
+local stunAnimation = ReplicatedStorage.Animations.Movement.Stun
+local hitReactionRightAnimation = ReplicatedStorage.Animations.Combat.HitReactionRight
+local hitReactionLeftAnimation = ReplicatedStorage.Animations.Combat.HitReactionLeft
+
 local CombatEvent = ReplicatedStorage.RemoteEvents.CombatEvent
 
 local player = game:GetService("Players").LocalPlayer
@@ -182,10 +186,29 @@ ctx.humanoid.Died:Connect(function()
 	Combat.ResetState(ctx)
 end)
 
-CombatEvent.OnClientEvent:Connect(function(state, switch)
-	if switch then
-		Movement.SetState(ctx, state)
-	else
-		Movement.ResetState(ctx)
+CombatEvent.OnClientEvent:Connect(function(gotParried, attackSide)
+	if attackSide then
+		local track
+		
+		Movement.SetState(ctx, "Stunned")
+	
+		if attackSide == "Right Arm" then
+			track = AnimationManager.PlayAnimation(hitReactionRightAnimation, Enum.AnimationPriority.Action4, 1, 1.5, false)
+		elseif attackSide == "Left Arm" then
+			track = AnimationManager.PlayAnimation(hitReactionLeftAnimation, Enum.AnimationPriority.Action4, 1, 1.5, false)
+		end
+		
+		task.delay(track.Length // 3, function()
+			Movement.SetState(ctx, "Idle")
+		end)
+		
+	elseif gotParried then
+		Movement.SetState(ctx, "Stunned")
+		AnimationManager.PlayAnimation(stunAnimation, Enum.AnimationPriority.Action4, 1, 1, true)
+		
+		task.delay(1, function()
+			Movement.SetState(ctx, "Idle")
+			AnimationManager.StopAnimation(stunAnimation)
+		end)
 	end
 end)

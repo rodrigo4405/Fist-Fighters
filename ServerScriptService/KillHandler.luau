@@ -134,7 +134,7 @@ function KillHandler.AwardKill(victim: Player)
 end
 
 function KillHandler.ProcessDamage(attacker: Player, targetHumanoid: Humanoid, damage: number)
-	if not attacker or not targetHumanoid or targetHumanoid.Health <= 0 then return end
+	if not attacker or not targetHumanoid or targetHumanoid.Health <= 0 or damage <= 0 then return end
 	local victim = Players:GetPlayerFromCharacter(targetHumanoid.Parent)
 	
 	targetHumanoid:TakeDamage(damage)

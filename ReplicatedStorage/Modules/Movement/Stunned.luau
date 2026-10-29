@@ -1,9 +1,10 @@
 local walkSpeed = 0
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 return {
 	Enter = function(ctx)
 		walkSpeed = ctx.humanoid.WalkSpeed
-
+		
 		ctx.humanoid.WalkSpeed = 0
 		ctx.humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
 	end,

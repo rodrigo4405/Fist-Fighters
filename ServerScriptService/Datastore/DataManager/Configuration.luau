@@ -24,6 +24,10 @@ return {
 				BodyShot = "F",
 				Overhand = "C",
 				Block = "G",
+			}),
+			Volume = table.freeze({
+				Music = 100,
+				SFX = 100
 			})
 		})
 	}),

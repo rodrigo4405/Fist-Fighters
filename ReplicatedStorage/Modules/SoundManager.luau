@@ -101,6 +101,7 @@ function SoundManager.PlayMusic(music: Sound, volume: number?, looped: boolean?)
 		if newMusic.TimeLength == 0 then return end
 		if newMusic.TimeLength - newMusic.TimePosition <= FADE_TIME then
 			conn:Disconnect()
+			conn = nil
 			
 			local tween = fade(newMusic, FADE_TIME, 0)
 			tween.Completed:Wait()
@@ -109,8 +110,9 @@ function SoundManager.PlayMusic(music: Sound, volume: number?, looped: boolean?)
 	end)
 	
 	newMusic.Destroying:Once(function()
-		if conn.Connected then
+		if conn then
 			conn:Disconnect()
+			conn = nil
 		end
 	end)
 

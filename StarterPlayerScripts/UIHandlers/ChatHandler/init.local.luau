@@ -109,7 +109,7 @@ local function showSystemMessage(text)
 
 	addLine(
 		templates.system,
-		`<font color="#FFDA21" size="15">[System]</font> <font color="#FFFFFF" size="14">{escapeRichText(text)}</font>`
+		`<font color="#FFDA21">[System]</font> <font color="#FFFFFF">{escapeRichText(text)}</font>`
 	)
 end
 

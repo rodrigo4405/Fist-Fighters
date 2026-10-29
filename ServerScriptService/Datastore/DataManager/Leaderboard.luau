@@ -1,4 +1,5 @@
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local DataStoreService = game:GetService("DataStoreService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -40,7 +41,6 @@ function Leaderboard.new(storeName, shortName: string, length: number?, refreshI
 end
 
 local function refreshLeaderboard(self)
-	print(debug.info(2, "sln"))
 	self.LeaderboardCacheExpiry = 0
 	local data = self:GetLeaderboard(self.Length)
 	if not data then return end
@@ -64,12 +64,13 @@ function Leaderboard:Initialize()
 	end)
 end
 
-function Leaderboard:UpdateLeaderboard(player, value: number): boolean -- i should change the name
+function Leaderboard:UpdateLeaderboard(player, value: number): boolean
 	if RunService:IsStudio() and not CONFIG.KEEP_SAVES_STUDIO then return true end
 	if not tonumber(value) or not math.isfinite(value) then return false end
 
 	local userId
 	if type(player) == "number" then
+		if player <= 0 then return true end
 		userId = player
 	elseif typeof(player) == "Instance" and player:IsA("Player") then
 		userId = player.UserId

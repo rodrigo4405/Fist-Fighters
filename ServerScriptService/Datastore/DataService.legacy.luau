@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Permissions = require(ServerScriptService:WaitForChild("Commands"):WaitForChild("Permissions"))
 
 local saveKeybind = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("SaveKeybind")
+local saveSetting = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("SaveSetting")
 
 local function setPlayerTag(player: Player, data) 
 	if not data then return end
@@ -35,6 +36,15 @@ local function setKeybinds(player, data)
 	saveKeybind:FireClient(player, keybinds)
 end
 
+local function setSettings(player, data)
+	if not data then return end
+	
+	local settings_ = data.Settings
+	if not settings_ then return end
+	
+	saveSetting:FireClient(player, settings_)
+end
+
 saveKeybind.OnServerEvent:Connect(function(player: Player, changes: {[string]: Enum.KeyCode})
 	if type(changes) ~= "table" then return end
 	local newKeyBinds = {}
@@ -48,12 +58,18 @@ saveKeybind.OnServerEvent:Connect(function(player: Player, changes: {[string]: E
 	playerStore:Set(player, {Settings = {Keybinds = newKeyBinds}})
 end)
 
+saveSetting.OnServerEvent:Connect(function(player: Player, setting: {[string]: any})
+	local data = {Settings = table.clone(setting)}
+	playerStore:Set(player, data)
+end)
+
 local function onPlayerAdded(player: Player)	
 	local sig = playerStore:GetPlayerChangedSignal(player)
 	sig:Connect(function()
 		local data = playerStore:Get(player)
 		setPlayerTag(player, data)
 		setKeybinds(player, data)
+		setSettings(player, data)
 	end)
 end
 

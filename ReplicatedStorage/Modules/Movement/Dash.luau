@@ -22,7 +22,7 @@ return {
 		lastDashTime = os.clock()
 		
 		SoundManager.PlaySFX(SoundManager.SFX.Movement.Dash, ctx.rootPart)
-		AnimationManager.PlayAnimation(dashAnimation, Enum.AnimationPriority.Action4, 1, 1, true)
+		AnimationManager.PlayAnimation(dashAnimation, Enum.AnimationPriority.Action4, 1, 1, false)
 
 		local dashDirection = ctx.humanoid.MoveDirection
 		if dashDirection.Magnitude == 0 then

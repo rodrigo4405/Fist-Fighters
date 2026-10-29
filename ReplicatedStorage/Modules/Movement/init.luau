@@ -20,8 +20,8 @@ local function getState(name)
 	return stateCache[name]
 end
 
-function Movement.SetState(ctx, name, force)
-	if not force and name == activeStateName then return end
+function Movement.SetState(ctx, name)
+	if name == activeStateName then return end
 
 	local incoming = getState(name)
 
@@ -45,7 +45,7 @@ function Movement.ResetState(ctx)
 	activeStateName = nil
 
 	if ctx then
-		ApplyAttributeRE:FireServer("Movement", nil)
+		Movement.SetState(ctx, "Idle")
 	end
 end
 

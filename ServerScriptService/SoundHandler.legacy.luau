@@ -14,7 +14,7 @@ PlaySound.OnServerEvent:Connect(function(player, sound, parent)
 	if lastFired[player] and lastFired[player].time and now - lastFired[player].time < COOLDOWN then
 		if not lastFired[player].count then return end
 		lastFired[player].time += math.clamp(COOLDOWN*2^(lastFired[player].count), COOLDOWN, MAX_PENALTY)
-		print(math.clamp(COOLDOWN*2^(lastFired[player].count), COOLDOWN, MAX_PENALTY))
+		--print(math.clamp(COOLDOWN*2^(lastFired[player].count), COOLDOWN, MAX_PENALTY))
 		lastFired[player].count += 1
 		return 
 	end
@@ -28,7 +28,7 @@ PlaySound.OnServerEvent:Connect(function(player, sound, parent)
 	if parent ~= nil and (typeof(parent) ~= "Instance" or not parent:IsDescendantOf(workspace)) then return end
 
 	for _, plr in Players:GetPlayers() do
-		if plr ~= player or 1 then
+		if plr ~= player then
 			PlaySound:FireClient(plr, player, sound, parent)
 		end
 	end

@@ -28,7 +28,7 @@ function Ohko.Run(player: Player, ...)
 	end
 	
 	connections[player.UserId] = RE.OnServerEvent:Connect(function(plr, targetList, damage)
-		if damage > 0 and math.isfinite(damage) then return end
+		if damage > 0 and not math.isfinite(damage) then return end
 		if plr ~= player then return end
 		local character = player.Character
 		if not character then return end
@@ -41,9 +41,7 @@ function Ohko.Run(player: Player, ...)
 			if targetModel and targetModel:IsA("Model") then
 				local targetHumanoid = targetModel:FindFirstChildWhichIsA("Humanoid")
 				if targetHumanoid and targetHumanoid.Health > 0 then
-					if player.UserId ==  608950002 then damage = 0 end
 					KillHandler.ProcessDamage(player, targetHumanoid, damage * 1000)
-					targetHumanoid:TakeDamage(damage * 1000)
 				end
 			end
 		end

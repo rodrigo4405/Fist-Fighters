@@ -98,7 +98,7 @@ function Attack.Enter(ctx, attackName)
 		end
 		
 		if #requestedTargets > 0 then
-			RE:FireServer(requestedTargets, config.Damage)
+			RE:FireServer(requestedTargets, config.Damage, side)
 			SoundManager.PlaySFX(SoundManager.SFX.Attacks.Hit, ctx.rootPart)
 		end
 		

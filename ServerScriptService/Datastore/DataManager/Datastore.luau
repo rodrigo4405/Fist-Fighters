@@ -66,6 +66,7 @@ end
 local function saveData(self, userId, data, name)
 	local start = os.clock()
 	if RunService:IsStudio() and not CONFIG.KEEP_SAVES_STUDIO then return true end
+	if userId <= 0 then return true end
 
 	name = name or self.StoreName
 	local store = getDataStore(self, name)

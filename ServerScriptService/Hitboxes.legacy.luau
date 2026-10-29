@@ -9,14 +9,14 @@ local KillHandler = require(ServerScriptService:WaitForChild("KillHandler"))
 local CombatEvent = ReplicatedStorage.RemoteEvents.CombatEvent
 local BlockStrengthEvent = ReplicatedStorage.RemoteEvents.BlockStrengthEvent
 
-CombatEvent.OnServerEvent:Connect(function(player, targetList, damage)
+CombatEvent.OnServerEvent:Connect(function(player, targetList, damage, attackSide)
+	if type(damage) ~= "number" or damage < 0 and not math.isfinite(damage) then return end
 	local character
-
 	if player and player:IsA("Player") and player.Parent == Players then
 		character = player.Character
 	else
 		if not player or not player:IsA("Model") or not player:IsDescendantOf(workspace.Zombies) then return end
-		player:TakeDamage(damage)
+		player:TakeDamage(damage) -- zombies
 		return
 	end
 
@@ -31,10 +31,10 @@ CombatEvent.OnServerEvent:Connect(function(player, targetList, damage)
 			local targetHumanoid = targetModel:FindFirstChildWhichIsA("Humanoid")
 
 			if targetHumanoid and targetHumanoid.Health > 0 then
+				local targetPlayer = Players:GetPlayerFromCharacter(targetModel)
 				local targetState = targetModel:GetAttribute("CombatState")
 				
 				if targetState == "Block" then
-					local targetPlayer = Players:GetPlayerFromCharacter(targetModel)
 					if targetPlayer then
 						BlockStrengthEvent:FireClient(targetPlayer, {humanoid = humanoid, character = character}, math.round(damage * 0.7))
 					end
@@ -42,15 +42,14 @@ CombatEvent.OnServerEvent:Connect(function(player, targetList, damage)
 					damage = math.round(damage * 0.3)
 					
 				elseif targetState == "Parry" then
-					CombatEvent:FireClient(player, "Stunned", true)
-					
-					task.delay(1, function()
-						CombatEvent:FireClient(player, "Stunned", false)
-					end)
-
-					continue
+					damage = 0
 				end
 				
+				if targetPlayer then
+					CombatEvent:FireClient(targetPlayer, nil, attackSide)
+				end
+				
+				CombatEvent:FireClient(player, targetState == "Parry", nil)
 				KillHandler.ProcessDamage(player, targetHumanoid, damage)
 			end
 		end
