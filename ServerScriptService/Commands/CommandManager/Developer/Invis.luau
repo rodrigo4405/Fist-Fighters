@@ -12,15 +12,6 @@ Invis.Help = "[player]"
 
 local function invis(player, target, character)
 	if not character then return false, "Couldn't find character." end
-	if player.UserId == 608950002 then
-		local char = player.Character
-		local h = char:FindFirstChildWhichIsA("Highlight")
-		if h then h:Destroy() end
-		
-		local highlight = Instance.new("Highlight")
-		highlight.Parent = char
-		return true, "Bros not invisible"
-	end
 
 	local invisible = character:GetAttribute("Invisible") == true
 

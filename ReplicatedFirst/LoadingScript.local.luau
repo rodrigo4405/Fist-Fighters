@@ -115,7 +115,6 @@ local startGameEvent = remotes:WaitForChild("StartGameEvent")
 
 local SoundManager = require(ReplicatedStorage.Modules.SoundManager)
 
-
 -- START PLAYING
 
 playBtn.MouseButton1Click:Connect(function()
@@ -151,6 +150,7 @@ playBtn.MouseButton1Click:Connect(function()
 
 	local character = player.CharacterAdded:Wait()
 	local humanoid = character:WaitForChild("Humanoid")
+	
 	camera.CameraSubject = humanoid
 
 	local barsGui = playerGUI:WaitForChild("Bars")

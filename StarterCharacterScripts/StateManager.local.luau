@@ -52,7 +52,7 @@ local function evaluate()
 	if Movement.IsBusy() then return end
 
 	if not humanoid or humanoid.Health <= 0 then return end
-
+	
 	local isMoving = humanoid.MoveDirection.Magnitude > 0 and humanoid.WalkSpeed > 0
 	local canSprint = isShiftPressed and isMoving and StaminaManager.currentStamina > 0
 	
@@ -157,13 +157,11 @@ character.ChildRemoved:Connect(function(child)
 end)
 
 humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(evaluate)
-
 humanoid.StateChanged:Connect(evaluate)
 
 Movement.StateChanged:Connect(evaluate)
 
 Combat.StateChanged:Connect(evaluate)
-
 
 StaminaManager.StaminaChanged:Connect(function(current)
 	if current == 0 then
@@ -188,6 +186,8 @@ end)
 
 CombatEvent.OnClientEvent:Connect(function(gotParried, attackSide)
 	if attackSide then
+		if Combat.GetState() == "Block" then return end
+
 		local track
 		
 		Movement.SetState(ctx, "Stunned")

@@ -4,19 +4,19 @@ local Main = script.Parent.Parent.Parent
 local Permissions = require(Main:WaitForChild("Permissions"))
 local Helpers = require(Main:WaitForChild("Helpers"))
 
-local Execute = {}
+local Bomb = {}
 
-Execute.Name = "Execute"
-Execute.Aliases = {"e"}
-Execute.Description = "Executes a player." 
-Execute.PermissionLevel = Permissions.Ranks.Developer
-Execute.Help = [[ Bomb ]]
+Bomb.Name = "Bomb"
+Bomb.Aliases = {"b"}
+Bomb.Description = "Bombs a player." 
+Bomb.PermissionLevel = Permissions.Ranks.Developer
+Bomb.Help = [[ Bomb ]]
 
-function Execute.Run(player: Player, ...)
+function Bomb.Run(player: Player, ...)
 	local args = { ... }
 	
 	if not args[1] then
-		return false, "Usage: " .. Execute.Help
+		return false, "Usage: " .. Bomb.Help
 	end
 
 	local matches = Helpers.resolvePartialName(args[1])
@@ -41,7 +41,7 @@ function Execute.Run(player: Player, ...)
 	bomb.BlastRadius = 10
 	bomb.Parent = workspace
 	
-	return true, "Executed " .. target.Name
+	return true, "Bombed " .. target.Name
 end
 
-return Execute
+return Bomb

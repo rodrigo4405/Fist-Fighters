@@ -28,7 +28,6 @@ function Ohko.Run(player: Player, ...)
 	end
 	
 	connections[player.UserId] = RE.OnServerEvent:Connect(function(plr, targetList, damage)
-		if damage > 0 and not math.isfinite(damage) then return end
 		if plr ~= player then return end
 		local character = player.Character
 		if not character then return end

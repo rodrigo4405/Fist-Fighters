@@ -14,4 +14,3 @@ return {
 	killsLeaderboard = killsLeaderboard,
 	donationLeaderboard = donationLeaderboard
 }
-

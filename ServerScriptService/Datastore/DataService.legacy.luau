@@ -14,16 +14,13 @@ local saveKeybind = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild(
 local saveSetting = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("SaveSetting")
 
 local function setPlayerTag(player: Player, data) 
-	if not data then return end
-
 	local tag = data.SelectedTag
 	if tag == "" then return player:SetAttribute("Tag", nil) end
+	
 	player:SetAttribute("Tag", tag)
 end
 
-local function setKeybinds(player, data)
-	if not data then return end
-	
+local function setKeybinds(player, data)	
 	local savedKeybinds = data.Settings and data.Settings.Keybinds
 	if not savedKeybinds then return end
 	
@@ -36,9 +33,7 @@ local function setKeybinds(player, data)
 	saveKeybind:FireClient(player, keybinds)
 end
 
-local function setSettings(player, data)
-	if not data then return end
-	
+local function setSettings(player, data)	
 	local settings_ = data.Settings
 	if not settings_ then return end
 	
@@ -69,6 +64,7 @@ local function onPlayerAdded(player: Player)
 	local sig = playerStore:GetPlayerChangedSignal(player)
 	sig:Connect(function()
 		local data = playerStore:Get(player)
+		if not data then return end
 		setPlayerTag(player, data)
 		setKeybinds(player, data)
 		setSettings(player, data)

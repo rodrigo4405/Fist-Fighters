@@ -65,7 +65,7 @@ local playingFolder = Instance.new("Folder")
 playingFolder.Name = "Playing"
 playingFolder.Parent = SoundService
 
-function SoundManager.PlaySFX(sound, parent)
+function SoundManager.PlaySFX(sound, parent, server: boolean?)
 	if not parent then 
 		local character = game:GetService("Players").LocalPlayer.Character
 		if not character then return end
@@ -77,7 +77,7 @@ function SoundManager.PlaySFX(sound, parent)
 
 	if type(sound) ~= "table" then
 		sound:Play()
-		PlaySound:FireServer(sound, parent) 
+		if not server then PlaySound:FireServer(sound, parent) end
 		return
 	end
 	
@@ -86,7 +86,7 @@ function SoundManager.PlaySFX(sound, parent)
 	local index = math.random(1, #sound)
 	local s = sound[index]
 	s:Play()
-	PlaySound:FireServer(s, parent)
+	if not server then PlaySound:FireServer(s, parent) end
 end
 
 function SoundManager.PlayMusic(music: Sound, volume: number?, looped: boolean?)
