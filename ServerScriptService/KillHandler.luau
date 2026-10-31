@@ -1,12 +1,13 @@
 local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local DataManager = require(ServerScriptService:WaitForChild("Datastore"):WaitForChild("DataManager"))
+local DataManager = require(ServerScriptService.Datastore.DataManager)
 local playerStore = DataManager.playerDataStore
 local killsLeaderboardStore = DataManager.killsLeaderboard
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local FeedEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("FeedEvent")
+local FeedEvent = ReplicatedStorage.RemoteEvents.FeedEvent
+local Ragdoll = require(ReplicatedStorage.Modules.Ragdoll)
 
 local tracker = {}
 local streaks = {}
@@ -14,141 +15,126 @@ local streaks = {}
 local CREDIT_WINDOW = 60
 local RESPAWN_DELAY = 3
 
-local function ragdoll(character, lv)
-	if not character then return end
-	local humanoid = character:FindFirstChildOfClass("Humanoid")
-	if not humanoid then return end
-
-	humanoid.RequiresNeck = false
-	humanoid.PlatformStand = true
-	humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-	humanoid.AutoRotate = false
-
-
-	for _, part in ipairs(character:GetDescendants()) do
-		if part:IsA("BasePart") then
-			part:SetNetworkOwner(nil)
-		end
-	end
-
-	local hrp = character:FindFirstChild("HumanoidRootPart")
-	if hrp then
-		lv = lv or -hrp.CFrame.LookVector
-		hrp.AssemblyLinearVelocity = -lv * 50
-		hrp.CanCollide = false
-	end
-
-	for _, joint in pairs(character:GetDescendants()) do
-		if joint:IsA("Motor6D") and joint.Part0 and joint.Part1 then
-			local attachment0 = Instance.new("Attachment")
-			attachment0.CFrame = joint.C0
-			attachment0.Parent = joint.Part0
-
-			local attachment1 = Instance.new("Attachment")
-			attachment1.CFrame = joint.C1
-			attachment1.Parent = joint.Part1
-
-			local socket = Instance.new("BallSocketConstraint")
-			socket.Attachment0 = attachment0
-			socket.Attachment1 = attachment1
-			socket.LimitsEnabled = true
-			socket.TwistLimitsEnabled = true
-			socket.Parent = joint.Parent
-
-			joint.Enabled = false
-		end
-	end
-
-	return false
+local function getNoobId(model)
+	return "noob_" .. tostring(model)
 end
 
+local function getEntityId(entity, isNoob)
+	if isNoob then return getNoobId(entity) end
+	return entity.UserId
+end
 
 local KillHandler = {}
 
-function KillHandler.RegisterAttacker(attacker: Player, victim: Player, damage: number)
+function KillHandler.RegisterAttacker(attacker, victim, damage, attackerIsNoob, victimIsNoob)
 	if not attacker or not victim or attacker == victim then return false end
 
-	local victimEntry = tracker[victim.UserId]
+	local victimId = victimIsNoob and getNoobId(victim) or victim.UserId
+	local victimEntry = tracker[victimId]
 	if not victimEntry then
 		victimEntry = {}
-		tracker[victim.UserId] = victimEntry
+		tracker[victimId] = victimEntry
 	end
 
-	local attackInfo = victimEntry[attacker.UserId]
+	local attackerId = getEntityId(attacker, attackerIsNoob)
+	local attackInfo = victimEntry[attackerId]
 	if not attackInfo then
-		attackInfo = {Damage = 0, Time = 0, Player = attacker}
-		victimEntry[attacker.UserId] = attackInfo
+		attackInfo = {Damage = 0, Time = 0, Entity = attacker, IsNoob = attackerIsNoob}
+		victimEntry[attackerId] = attackInfo
 	end
 
 	attackInfo.Damage += damage
 	attackInfo.Time = os.clock()
-
 	return true
 end
 
-function KillHandler.AwardKill(victim: Player)
+function KillHandler.AwardKill(victim, victimIsNoob)
 	if not victim then return false end
 
-	local tracking = tracker[victim.UserId]
-	tracker[victim.UserId] = nil
+	local victimId = victimIsNoob and getNoobId(victim) or victim.UserId
+	local tracking = tracker[victimId]
+	tracker[victimId] = nil
 
-	playerStore:IncrementSession(victim, "Deaths", 1)
+	if not victimIsNoob then
+		playerStore:IncrementSession(victim, "Deaths", 1)
+	end
 
-	if not tracking then return ragdoll(victim.Character) end
+	if not tracking then
+		local character = victimIsNoob and victim or victim.Character
+		return Ragdoll.Play(character)
+	end
 
 	local now = os.clock()
 	local killer, mostDamage, ltime = nil, 0, 0
+	local killerIsNoob = false
+	
 	for _, info in pairs(tracking) do
-		if now - info.Time > CREDIT_WINDOW or info.Player.Parent ~= Players or info.Damage < mostDamage then continue end
+		if now - info.Time > CREDIT_WINDOW then continue end
+		if info.IsNoob then
+			if not info.Entity or not info.Entity.Parent then continue end
+		else
+			if info.Entity.Parent ~= Players then continue end
+		end
+		if info.Damage < mostDamage then continue end
 		if info.Damage == mostDamage and ltime < info.Time then continue end
 		
-		killer = info.Player
+		killer = info.Entity
+		killerIsNoob = info.IsNoob
 		mostDamage = info.Damage
 		ltime = info.Time
 	end
 
-	if not killer then return ragdoll(victim.Character) end
-	ragdoll(victim.Character, killer.Character and killer.Character.HumanoidRootPart and killer.Character.HumanoidRootPart.CFrame.LookVector)
-	
-	local killerStreak = streaks[killer.UserId]
-	if not killerStreak then
-		killerStreak = 0
+	if not killer then
+		local character = victimIsNoob and victim or victim.Character
+		return Ragdoll.Play(character)
 	end
-	
-	killerStreak += 1
-	streaks[killer.UserId] = killerStreak
-	streaks[victim.UserId] = 0
-	
-	local success = playerStore:IncrementSession(killer, "Kills", 1)
-	if not success then return false end
-	
-	FeedEvent:FireAllClients(killer, victim, mostDamage, killerStreak)
 
-	local data = playerStore:Get(killer)
-	local lifetimeKills = data and data.Kills
-	if lifetimeKills then
-		killsLeaderboardStore:UpdateLeaderboard(killer, lifetimeKills)
+	local victimCharacter = victimIsNoob and victim or victim.Character
+	local killerCharacter = killerIsNoob and killer.Model or killer.Character
+	
+	Ragdoll.Play(victimCharacter, killerCharacter and killerCharacter:FindFirstChild("HumanoidRootPart") and killerCharacter.HumanoidRootPart.CFrame.LookVector)
+	
+	if not killerIsNoob then
+		local killerStreak = streaks[killer.UserId] or 0
+		killerStreak += 1
+		streaks[killer.UserId] = killerStreak
+		if not victimIsNoob then streaks[victim.UserId] = 0 end
+		
+		local success = playerStore:IncrementSession(killer, "Kills", 1)
+		if not success then return false end
+		
+		local victimForFeed = victimIsNoob and {Name = victim.Name} or victim
+		FeedEvent:FireAllClients(killer, victimForFeed, mostDamage, killerStreak)
+
+		local data = playerStore:Get(killer)
+		local lifetimeKills = data and data.Kills
+		if lifetimeKills then killsLeaderboardStore:UpdateLeaderboard(killer, lifetimeKills) end
 	end
 
 	return true
 end
 
-function KillHandler.ProcessDamage(attacker: Player, targetHumanoid: Humanoid, damage: number)
+function KillHandler.ProcessDamage(attacker, targetHumanoid, damage, victimIsNoob)
 	if not attacker or not targetHumanoid or targetHumanoid.Health <= 0 or damage <= 0 then return end
-	local victim = Players:GetPlayerFromCharacter(targetHumanoid.Parent)
-	
 	targetHumanoid:TakeDamage(damage)
-	KillHandler.RegisterAttacker(attacker, victim, damage)
+	KillHandler.RegisterAttacker(attacker, targetHumanoid.Parent, damage, false, victimIsNoob)
 end
 
-local function onPlayerAdded(player: Player)
+function KillHandler.ProcessNoobDamage(noob, targetHumanoid, damage)
+	if not noob or not targetHumanoid or targetHumanoid.Health <= 0 or damage <= 0 then return end
+	local victim = Players:GetPlayerFromCharacter(targetHumanoid.Parent)
+	if not victim then return end
+	targetHumanoid:TakeDamage(damage)
+	KillHandler.RegisterAttacker(noob, victim, damage, true, false)
+end
+
+local function onPlayerAdded(player)
 	player.CharacterAdded:Connect(function(character)
 		local humanoid = character:WaitForChild("Humanoid")
 		if not humanoid then return end
-		
 		humanoid.BreakJointsOnDeath = false
 		humanoid.Died:Once(function()
-			KillHandler.AwardKill(player)
+			KillHandler.AwardKill(player, false)
 			if player and player.Parent == Players then
 				task.delay(RESPAWN_DELAY, function() player:LoadCharacterAsync() end)
 			end
@@ -156,21 +142,15 @@ local function onPlayerAdded(player: Player)
 	end)
 end
 
-local function onPlayerRemoving(player: Player)
-	KillHandler.AwardKill(player)
-
+local function onPlayerRemoving(player)
+	KillHandler.AwardKill(player, false)
 	tracker[player.UserId] = nil
-
-	for _, tracking in pairs(tracker) do
-		tracking[player.UserId] = nil
-	end
+	for _, tracking in pairs(tracker) do tracking[player.UserId] = nil end
 end
 
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
 
-for _, player in ipairs(Players:GetPlayers()) do
-	task.spawn(onPlayerAdded, player)
-end
+for _, player in ipairs(Players:GetPlayers()) do task.spawn(onPlayerAdded, player) end
 
 return KillHandler

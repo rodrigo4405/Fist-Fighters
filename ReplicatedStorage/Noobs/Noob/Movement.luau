@@ -101,7 +101,6 @@ function Movement.Chase(self)
 
 				for _, waypoint in waypoints do
 					if not self.ChaseThread then return end
-					if (waypoint.Position - noobRoot.Position).Magnitude <= 2 then continue end
 
 					if waypoint.Action == Enum.PathWaypointAction.Jump then
 						self.Humanoid.Jump = true

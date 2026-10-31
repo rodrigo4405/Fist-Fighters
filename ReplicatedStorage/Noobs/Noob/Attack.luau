@@ -23,7 +23,7 @@ local function finish(noob, attackName)
 end
 
 function Attack.CanEnter(attackName)
-	local config = Configuration[attackName]
+	local config = Configuration.Combat[attackName]
 	if not config then return false end
 	
 	local onCooldownUntil = cooldowns[attackName]
@@ -33,7 +33,7 @@ function Attack.CanEnter(attackName)
 end
 
 function Attack.Enter(noob, attackName)
-	local config = Configuration[attackName]
+	local config = Configuration.Combat[attackName]
 
 	cooldowns[attackName] = os.clock() + (config.Cooldown or 0)
 	noob.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
@@ -110,7 +110,7 @@ function Attack.Enter(noob, attackName)
 					
 					if damage > 0 then
 						SoundManager.PlaySFX(SoundManager.SFX.Attacks.Hit, noob.Model:FindFirstChild("HumanoidRootPart"), true)
-						KillHandler.ProcessDamage(noob.Model, targetHumanoid, damage)
+						KillHandler.ProcessNoobDamage(noob, targetHumanoid, damage)
 					end
 				end
 			end

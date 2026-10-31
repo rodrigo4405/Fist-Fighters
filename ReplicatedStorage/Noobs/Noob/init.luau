@@ -29,7 +29,7 @@ Noob.States = {
 }
 
 function Noob.new(position: CFrame)
-	if #noobs >= CONFIG.NoobCap then return nil end
+	--if #noobs >= CONFIG.NoobCap then return nil end
 	local self = setmetatable({}, Noob)
 
 	self.Model = model:Clone()
@@ -75,6 +75,10 @@ function Noob.new(position: CFrame)
 	table.insert(noobs, self)
 
 	return self
+end
+
+function Noob:IsInState(state: string): boolean
+	return self.State == state
 end
 
 function Noob:SetState(newState: string)
@@ -149,7 +153,7 @@ function Noob:Update()
 			if target then
 				Movement.StopRoam(self)
 
-				if not self.ChaseThread and not self:IsState(Noob.States.Attacking) then
+				if not self.ChaseThread and self.State ~= Noob.States.Attacking then
 					self.Humanoid.WalkSpeed = CONFIG.ChaseWalkspeed
 					Movement.Chase(self)
 					self:SetState(Noob.States.Chasing)
@@ -180,8 +184,8 @@ function Noob:Update()
 end
 
 function Noob:AttackLoop()
-	local ATTACK_RANGE = CONFIG.AttackRange or 6
-	local ATTACK_COOLDOWN = CONFIG.AttackCooldown or 1
+	local ATTACK_RANGE = CONFIG.AttackRange
+	local ATTACK_COOLDOWN = CONFIG.AttackCooldown
 	
 	while self.Target and self.Target.Parent and self.Humanoid.Health > 0 do
 		local targetRoot = self.Target:FindFirstChild("HumanoidRootPart")
@@ -209,14 +213,14 @@ function Noob:AttackLoop()
 				task.wait(0.2)
 			end
 		else
-			if self:IsState(Noob.States.Attacking) then
+			if self:IsInState(Noob.States.Attacking) then
 				self:SetState(Noob.States.Chasing)
 			end
 			task.wait(0.2)
 		end
 	end
 	
-	if self:IsState(Noob.States.Attacking) then
+	if self:IsInState(Noob.States.Attacking) then
 		self:SetState(Noob.States.Chasing)
 	end
 	
@@ -232,7 +236,7 @@ function Noob:Destroy()
 	local index = table.find(noobs, self)
 	if index then table.remove(noobs, index) end
 
-	self.Model:Destroy()
+	task.delay(CONFIG.CorpseDespawn, function() self.Model:Destroy() end)
 end
 
 return Noob

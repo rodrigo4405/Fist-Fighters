@@ -1,11 +1,11 @@
-local Animations = game:GetService("ReplicatedStorage"):WaitForChild("Animations")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Animations = ReplicatedStorage:WaitForChild("Animations")
+local CombatConfig = require(ReplicatedStorage.Modules.Combat.Configuration)
 
 return {
-	DefaultSpawn = CFrame.new(0, 0, 0),
 	NoobCap = 10,
 	
 	Health = 100,
-	
 	Walkspeed = 16,
 	ChaseWalkspeed = 24,
 	
@@ -15,24 +15,19 @@ return {
 	AttackLeftAnimation = Animations.Combat.JabLeft,
 	AttackRightAnimation = Animations.Combat.JabRight,
 	
-	AggroRange = 40, -- minimum distance until zombie starts chasing
-	ChaseRange = 80, -- maximum distance until zombie stops chasing
+	AggroRange = 40,
+	ChaseRange = 80,
 	ChasePathRate = 0.5,
 	
 	UpdateRate = 0.5,
 	
 	RoamRate = 2,
 	RoamRadius = 15,
+
+	AttackRange = 6,
+	AttackCooldown = 1,
 	
-	-- Attack settings
-	AttackRange = 6, -- studs
-	AttackCooldown = 1, -- seconds
+	Combat = CombatConfig,
 	
-	-- Attack configurations (mirroring Combat module)
-	Jab = {
-		Damage = 8,
-		Cooldown = 1,
-		RightAnim = Animations.Combat.JabRight,
-		LeftAnim = Animations.Combat.JabLeft,
-	},
+	CorpseDespawn = 3
 }
