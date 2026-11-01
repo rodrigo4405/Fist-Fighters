@@ -108,9 +108,7 @@ function Movement.Chase(self)
 					end
 
 					self.Humanoid:MoveTo(waypoint.Position)
-
-					local reached = self.Humanoid.MoveToFinished:Wait()
-					if not reached then return end
+					self.Humanoid.MoveToFinished:Wait()
 				end
 			end)
 

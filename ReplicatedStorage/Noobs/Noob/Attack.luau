@@ -6,7 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SoundManager = require(ReplicatedStorage.Modules.SoundManager)
-local Configuration = require(script.Parent.Configuration)
+local CONFIG = require(script.Parent.Configuration)
 local Utils = require(script.Parent.Utils)
 
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -23,7 +23,7 @@ local function finish(noob, attackName)
 end
 
 function Attack.CanEnter(attackName)
-	local config = Configuration.Combat[attackName]
+	local config = CONFIG.Combat[attackName]
 	if not config then return false end
 	
 	local onCooldownUntil = cooldowns[attackName]
@@ -33,7 +33,7 @@ function Attack.CanEnter(attackName)
 end
 
 function Attack.Enter(noob, attackName)
-	local config = Configuration.Combat[attackName]
+	local config = CONFIG.Combat[attackName]
 
 	cooldowns[attackName] = os.clock() + (config.Cooldown or 0)
 	noob.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
@@ -145,6 +145,28 @@ function Attack.Enter(noob, attackName)
 	end)
 
 	return true
+end
+
+function Attack.Loop(self)
+	Utils.cancelThread(self, "AttackThread")
+
+	self.AttackThread = task.spawn(function()
+		while self:IsInState("Attacking") and self.Target and self.Target.Parent and self.Humanoid.Health > 0 do
+			local targetRoot = self.Target:FindFirstChild("HumanoidRootPart")
+			local noobRoot = self.Model:FindFirstChild("HumanoidRootPart")
+			if not targetRoot or not noobRoot then break end
+			
+			noobRoot.CFrame = CFrame.lookAt(noobRoot.Position, Vector3.new(targetRoot.Position.X, noobRoot.Position.Y, targetRoot.Position.Z))
+			self.Humanoid:MoveTo(noobRoot.Position)
+
+			if Attack.CanEnter(self, "Jab") then
+				Attack.Enter(self, "Jab")
+			end
+			task.wait(CONFIG.AttackCooldown)
+		end
+
+		self.AttackThread = nil
+	end)
 end
 
 return Attack

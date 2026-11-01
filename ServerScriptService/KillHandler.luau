@@ -15,8 +15,9 @@ local streaks = {}
 local CREDIT_WINDOW = 60
 local RESPAWN_DELAY = 3
 
-local function getNoobId(model)
-	return "noob_" .. tostring(model)
+local function getNoobId(noob)
+	local model = noob and noob.Model
+	return model:GetAttribute("UniqueId") or "noob"
 end
 
 local function getEntityId(entity, isNoob)
@@ -54,11 +55,13 @@ function KillHandler.AwardKill(victim, victimIsNoob)
 	local victimId = victimIsNoob and getNoobId(victim) or victim.UserId
 	local tracking = tracker[victimId]
 	tracker[victimId] = nil
-
+	
 	if not victimIsNoob then
+		streaks[victim.UserId] = 0
 		playerStore:IncrementSession(victim, "Deaths", 1)
 	end
 
+	print(tracking)
 	if not tracking then
 		local character = victimIsNoob and victim or victim.Character
 		return Ragdoll.Play(character)
@@ -98,17 +101,17 @@ function KillHandler.AwardKill(victim, victimIsNoob)
 		local killerStreak = streaks[killer.UserId] or 0
 		killerStreak += 1
 		streaks[killer.UserId] = killerStreak
-		if not victimIsNoob then streaks[victim.UserId] = 0 end
 		
 		local success = playerStore:IncrementSession(killer, "Kills", 1)
 		if not success then return false end
 		
-		local victimForFeed = victimIsNoob and {Name = victim.Name} or victim
-		FeedEvent:FireAllClients(killer, victimForFeed, mostDamage, killerStreak)
+		FeedEvent:FireAllClients(killer, victim, mostDamage, killerStreak)
 
 		local data = playerStore:Get(killer)
 		local lifetimeKills = data and data.Kills
 		if lifetimeKills then killsLeaderboardStore:UpdateLeaderboard(killer, lifetimeKills) end
+	else
+		FeedEvent:FireAllClients(killer, victim, mostDamage, 0)
 	end
 
 	return true

@@ -4,11 +4,11 @@ local Helpers = require(Main:WaitForChild("Helpers"))
 
 local Invis = {}
 
-Invis.Name = "Invis"
-Invis.Aliases = {"Invisible"}
+Invis.Name = "Invisible"
+Invis.Aliases = {"Invis"}
 Invis.Description = "Toggle a player's invisibility."
 Invis.PermissionLevel = Permissions.Ranks.Developer
-Invis.Help = "[player]"
+Invis.Help = ""
 
 local function invis(player, target, character)
 	if not character then return false, "Couldn't find character." end

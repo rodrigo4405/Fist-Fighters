@@ -108,7 +108,18 @@ local function getCommands(player: Player)
 	return true, table.concat(result, "\n")
 end
 
+local logs = {} -- doesnt log /cmds /help
+local function getCommandLogs()
+	local result = {"Logs"}
+	for _, log in logs do
+		table.insert(result, ("%s: %s %s"):format(log.Name, log.Command, log.Arguments))
+	end
+	
+	return true, table.concat(result, "\n")
+end
+
 function CommandManager.Run(player: Player, commandName: string, ...): (boolean, string)
+	if not player or player.Parent ~= Players then return end
 	if not initialised then
 		loadCommands()
 	end
@@ -122,6 +133,10 @@ function CommandManager.Run(player: Player, commandName: string, ...): (boolean,
 
 	if commandName == "cmds" or commandName == "commands" then
 		return getCommands(player, ...)
+	end
+	
+	if commandName == "logs" then
+		return getCommandLogs()
 	end
 
 	local command = commands[commandName]
@@ -137,6 +152,7 @@ function CommandManager.Run(player: Player, commandName: string, ...): (boolean,
 	end
 
 	local ok, success, result = pcall(command.Run, player, ...)
+	table.insert(logs, {Name = player.Name, UserId = player.UserId, Command = commandName, Arguments = table.concat({...}), Time = os.time()})
 
 	if not ok then
 		warn("Command error:", commandName, success)

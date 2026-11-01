@@ -1,5 +1,6 @@
 local PathFindingService = game:GetService("PathfindingService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
 
 local model = ReplicatedStorage:WaitForChild("Noob")
 
@@ -35,6 +36,10 @@ function Noob.new(position: CFrame)
 	self.Model = model:Clone()
 	self.Model.Parent = noobFolder
 	self.Model:PivotTo(position or spawns[math.random(1, #spawns)].CFrame)
+	self.Model.PrimaryPart:SetNetworkOwner(nil)
+	
+	self.UniqueId = HttpService:GenerateGUID()
+	self.Model:SetAttribute("UniqueId", self.UniqueId)
 
 	self.Humanoid = self.Model:FindFirstChild("Humanoid")
 	if not self.Humanoid then
@@ -160,9 +165,8 @@ function Noob:Update()
 				end
 				
 				if not self.AttackThread then
-					self.AttackThread = task.spawn(function()
-						self:AttackLoop()
-					end)
+					Attack.Loop(self)
+					self:SetState(Noob.States.Attacking)
 				end
 			else
 				if self.ChaseThread then
@@ -181,50 +185,6 @@ function Noob:Update()
 			end
 		end
 	end)
-end
-
-function Noob:AttackLoop()
-	local ATTACK_RANGE = CONFIG.AttackRange
-	local ATTACK_COOLDOWN = CONFIG.AttackCooldown
-	
-	while self.Target and self.Target.Parent and self.Humanoid.Health > 0 do
-		local targetRoot = self.Target:FindFirstChild("HumanoidRootPart")
-		local noobRoot = self.Model:FindFirstChild("HumanoidRootPart")
-		local humanoid = self.Humanoid
-		
-		if not targetRoot or not noobRoot or not humanoid or humanoid.Health <= 0 then
-			break
-		end
-		
-		local distance = (targetRoot.Position - noobRoot.Position).Magnitude
-		
-		if distance <= ATTACK_RANGE then
-			self:SetState(Noob.States.Attacking)
-			
-			local lookAt = CFrame.lookAt(noobRoot.Position, Vector3.new(targetRoot.Position.X, noobRoot.Position.Y, targetRoot.Position.Z))
-			noobRoot.CFrame = lookAt
-			
-			self.Humanoid:MoveTo(noobRoot.Position)
-			
-			if Attack.CanEnter("Jab") then
-				Attack.Enter(self, "Jab")
-				task.wait(ATTACK_COOLDOWN)
-			else
-				task.wait(0.2)
-			end
-		else
-			if self:IsInState(Noob.States.Attacking) then
-				self:SetState(Noob.States.Chasing)
-			end
-			task.wait(0.2)
-		end
-	end
-	
-	if self:IsInState(Noob.States.Attacking) then
-		self:SetState(Noob.States.Chasing)
-	end
-	
-	self.AttackThread = nil
 end
 
 function Noob:Destroy()

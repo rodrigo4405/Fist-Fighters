@@ -62,7 +62,6 @@ local function formatKillstreak(killer, streak)
 end
 
 FeedEvent.OnClientEvent:Connect(function(killer, victim, damage, streak)
-	print(killer)
 	if not killer or not victim then return end
 	damage = damage or 100
 	local highlight = killer == player
