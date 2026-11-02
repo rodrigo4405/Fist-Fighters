@@ -18,7 +18,10 @@ function Movement.Roam(self)
 			self:PlayAnimation(CONFIG.WalkAnimation, Enum.AnimationPriority.Movement, 1, 1, true)
 
 			local noobRoot = self.Model:FindFirstChild("HumanoidRootPart")
-			if not noobRoot then return end
+			if not noobRoot then 
+				self.RoamThread = nil
+				return
+			end
 
 			local angle = math.random() * 2 * math.pi
 			local distModifier = CONFIG.RoamRadius * math.random(-25, 25) * 0.01
@@ -58,6 +61,8 @@ function Movement.Roam(self)
 			self:StopAnimation(CONFIG.WalkAnimation)
 			randWait(CONFIG.RoamRate)
 		end
+		
+		self.RoamThread = nil
 	end)
 end
 
@@ -69,6 +74,10 @@ function Movement.Chase(self)
 
 	self:StopAnimation(CONFIG.WalkAnimation)
 	self:PlayAnimation(CONFIG.ChaseAnimation, Enum.AnimationPriority.Movement, 1, 1, true)
+
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+	rayParams.RespectCanCollide = true
 
 	self.ChaseThread = task.spawn(function()
 		while true do
@@ -85,6 +94,8 @@ function Movement.Chase(self)
 				return
 			end
 
+			rayParams.FilterDescendantsInstances = {self.Model, self.Target}
+
 			self.Path:ComputeAsync(position, hrp.Position)
 
 			if self.Path.Status ~= Enum.PathStatus.Success then
@@ -99,7 +110,7 @@ function Movement.Chase(self)
 			self.WaypointThread = task.spawn(function()
 				table.remove(waypoints, 1)
 
-				for _, waypoint in waypoints do
+				for i, waypoint in waypoints do
 					if not self.ChaseThread then return end
 
 					if waypoint.Action == Enum.PathWaypointAction.Jump then
@@ -107,7 +118,12 @@ function Movement.Chase(self)
 						self:PlayAnimation(CONFIG.JumpAnimation, Enum.AnimationPriority.Action, 1, 1, false)
 					end
 
-					self.Humanoid:MoveTo(waypoint.Position)
+					local goal = waypoint.Position
+					if i == #waypoints and hrp.Parent then
+						goal = hrp.Position
+					end
+
+					self.Humanoid:MoveTo(goal)
 					self.Humanoid.MoveToFinished:Wait()
 				end
 			end)

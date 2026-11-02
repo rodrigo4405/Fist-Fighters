@@ -14,6 +14,8 @@ local PARRY_MULTIPLIER = 0
 
 local function isNoob(model: Model): boolean
 	if not model then return false end
+	if not noobFolder then return false end
+	
 	return model:IsDescendantOf(noobFolder)
 end
 
@@ -41,6 +43,7 @@ CombatEvent.OnServerEvent:Connect(function(player, targetList, damage, attackSid
 
 	for _, targetModel in ipairs(targetList) do
 		if targetModel and targetModel:IsA("Model") and isNoob(targetModel) then
+			print(tostring(isNoob(targetModel)) .. " " .. tostring(targetModel))
 			local targetHumanoid = targetModel:FindFirstChildWhichIsA("Humanoid")
 
 			if targetHumanoid and targetHumanoid.Health > 0 then
@@ -71,6 +74,8 @@ end)
 
 task.spawn(function()
 	task.wait(1)
+	if not noobFolder then return end
+
 	for _, model in ipairs(noobFolder:GetChildren()) do
 		if model:IsA("Model") then
 			local humanoid = model:FindFirstChildWhichIsA("Humanoid")

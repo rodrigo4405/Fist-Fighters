@@ -47,6 +47,8 @@ function Noob.new(position: CFrame)
 		return nil
 	end
 	self.Humanoid.Died:Once(function() self:Destroy() end)
+	
+	Utils.SetName(self)
 
 	self.CachedTracks = {}
 	self.Animator = self.Humanoid:FindFirstChild("Animator")
@@ -70,8 +72,8 @@ function Noob.new(position: CFrame)
 	self.WaypointThread = nil
 	self.AttackThread = nil
 	
+	self.Cooldowns = {}
 	self.State = Noob.States.Idle
-
 	self.Target = nil
 
 	self.Path = PathFindingService:CreatePath({Costs = {Water = math.huge}})
@@ -88,26 +90,17 @@ end
 
 function Noob:SetState(newState: string)
 	if self.State == newState then return end
-	
+
 	local oldState = self.State
 	self.State = newState
-	
+
+	print(string.format("State: %s -> %s", oldState, newState))
+
 	if newState == Noob.States.Dead then
-		cancelThread(self, "UpdateThread")
 		cancelThread(self, "AttackThread")
 		Movement.StopAll(self)
-	elseif newState == Noob.States.Attacking then
-		if self.ChaseThread then
-			Movement.StopChase(self)
-		end
-	elseif newState == Noob.States.Chasing then
-		if self.Target and not self.ChaseThread then
-			self.Humanoid.WalkSpeed = CONFIG.ChaseWalkspeed
-			Movement.Chase(self)
-		end
+		cancelThread(self, "UpdateThread")
 	end
-	
-	-- print(string.format("State: %s -> %s", oldState, newState))
 end
 
 function Noob:PlayAnimation(animation: Animation, priority: Enum.AnimationPriority, weight: number?, speed: number?, looped: boolean?): AnimationTrack?
@@ -149,38 +142,51 @@ function Noob:Update()
 		while task.wait(CONFIG.UpdateRate) do
 			if self.Humanoid.Health <= 0 then
 				self:SetState(Noob.States.Dead)
-				break
+				return
 			end
-			
+
 			local target = Utils.nearestPlayer(self)
 			self.Target = target and target.Character
 
-			if target then
+			local targetRoot = self.Target and self.Target:FindFirstChild("HumanoidRootPart")
+			local root = self.Model.PrimaryPart
+
+			if targetRoot and root then
 				Movement.StopRoam(self)
 
-				if not self.ChaseThread and self.State ~= Noob.States.Attacking then
-					self.Humanoid.WalkSpeed = CONFIG.ChaseWalkspeed
-					Movement.Chase(self)
-					self:SetState(Noob.States.Chasing)
+				local range = CONFIG.AttackRange
+				if self.State == Noob.States.Attacking then
+					range += 2
 				end
-				
-				if not self.AttackThread then
-					Attack.Loop(self)
+				local distance = (targetRoot.Position - root.Position).Magnitude
+
+				if distance <= range then
 					self:SetState(Noob.States.Attacking)
+					if not self.AttackThread then
+						Attack.Loop(self)
+					end
+				else
+					if self.AttackThread then
+						cancelThread(self, "AttackThread")
+					end
+					self:SetState(Noob.States.Chasing)
+					if not self.ChaseThread then
+						self.Humanoid.WalkSpeed = CONFIG.ChaseWalkspeed
+						Movement.Chase(self)
+					end
 				end
 			else
 				if self.ChaseThread then
 					Movement.StopChase(self)
 				end
-				
 				if self.AttackThread then
 					cancelThread(self, "AttackThread")
 				end
 
+				self:SetState(Noob.States.Roaming)
 				if not self.RoamThread then
 					self.Humanoid.WalkSpeed = CONFIG.Walkspeed
 					Movement.Roam(self)
-					self:SetState(Noob.States.Roaming)
 				end
 			end
 		end

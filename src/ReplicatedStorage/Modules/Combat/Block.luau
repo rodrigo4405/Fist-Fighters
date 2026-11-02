@@ -44,7 +44,7 @@ function Block.Enter(ctx)
 	ctx.humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
 
 	StaminaManager.StartDrain("Block", config.StaminaCost)
-	AnimationManager.PlayAnimation(config.Anim, Enum.AnimationPriority.Action2, 1, 1, true)
+	AnimationManager.PlayAnimation(config.Anim, Enum.AnimationPriority.Action4, 1, 1, true)
 end
 
 function Block.Exit(ctx)

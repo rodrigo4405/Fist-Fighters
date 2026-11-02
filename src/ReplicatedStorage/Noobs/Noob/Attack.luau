@@ -14,29 +14,31 @@ local KillHandler = require(ServerScriptService.KillHandler)
 
 local Attack = {}
 
-local cooldowns = {}
-
-local function finish(noob, attackName)
+local function finish(noob)
 	if noob and noob.Humanoid then
 		noob.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
 	end
 end
 
-function Attack.CanEnter(attackName)
+function Attack.CanEnter(noob, attackName)
 	local config = CONFIG.Combat[attackName]
 	if not config then return false end
-	
-	local onCooldownUntil = cooldowns[attackName]
-	if onCooldownUntil and os.clock() < onCooldownUntil then return false end
-	
+
+	noob.Cooldowns = noob.Cooldowns or {}
+	local cooldown = noob.Cooldowns[attackName]
+	if cooldown and os.clock() < cooldown then return false end
+
 	return true
 end
+
 
 function Attack.Enter(noob, attackName)
 	local config = CONFIG.Combat[attackName]
 
-	cooldowns[attackName] = os.clock() + (config.Cooldown or 0)
+	noob.Cooldowns = noob.Cooldowns or {}
+	noob.Cooldowns[attackName] = os.clock() + (config.Cooldown or 0)
 	noob.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+
 
 	local side = Utils.GetAttackSide()
 	local armPart = noob.Model:FindFirstChild(side)
@@ -51,7 +53,7 @@ function Attack.Enter(noob, attackName)
 	local track = noob:PlayAnimation(anim, Enum.AnimationPriority.Action2, 1, 1, false)
 
 	if not track then 
-		finish(noob, attackName)
+		finish(noob)
 		return false
 	end
 	
@@ -61,8 +63,18 @@ function Attack.Enter(noob, attackName)
 	
 	local hitTargets = {}
 	
+	local overlapParams = OverlapParams.new()
+	overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+	overlapParams.FilterDescendantsInstances = {noob.Model}
+	
 	local connection
 	connection = RunService.Heartbeat:Connect(function(deltaTime)
+		if noob.State == "Dead" or not armPart.Parent then
+			connection:Disconnect()
+			connection = nil
+			return
+		end
+
 		timer += deltaTime
 		
 		if timer < interval then return end
@@ -73,41 +85,28 @@ function Attack.Enter(noob, attackName)
 		local boxCFrame = armPart.CFrame * boxOffset
 		local boxSize = armPart.Size + Vector3.new(.65, .8, .75)
 		
-		local overlapParams = OverlapParams.new()
-		overlapParams.FilterType = Enum.RaycastFilterType.Exclude
-		overlapParams.FilterDescendantsInstances = {noob.Model}
-		
 		local parts = workspace:GetPartBoundsInBox(boxCFrame, boxSize, overlapParams)
 		
 		local requestedTargets = {}
 		
 		for _, part in parts do
 			local targetModel = part:FindFirstAncestorWhichIsA("Model")
-			if targetModel and not hitTargets[targetModel] then 
-				local humanoid = targetModel:FindFirstChildWhichIsA("Humanoid")
-				local targetPlayer = Players:GetPlayerFromCharacter(targetModel)
-				if humanoid and humanoid.Health > 0 and targetPlayer then
-					hitTargets[targetModel] = true
-					table.insert(requestedTargets, targetModel)
-				end
-			end
-		end
-		
-		if #requestedTargets > 0 then
-			for _, targetModel in requestedTargets do
+			if targetModel and not hitTargets[targetModel] then
 				local targetHumanoid = targetModel:FindFirstChildWhichIsA("Humanoid")
 				local targetPlayer = Players:GetPlayerFromCharacter(targetModel)
-				
+
 				if targetHumanoid and targetHumanoid.Health > 0 and targetPlayer then
+					hitTargets[targetModel] = true
+
 					local damage = config.Damage or 8
-					
+
 					local targetState = targetModel:GetAttribute("CombatState")
 					if targetState == "Block" then
 						damage = math.round(damage * 0.3)
 					elseif targetState == "Parry" then
 						damage = 0
 					end
-					
+
 					if damage > 0 then
 						SoundManager.PlaySFX(SoundManager.SFX.Attacks.Hit, noob.Model:FindFirstChild("HumanoidRootPart"), true)
 						KillHandler.ProcessNoobDamage(noob, targetHumanoid, damage)
@@ -115,6 +114,7 @@ function Attack.Enter(noob, attackName)
 				end
 			end
 		end
+
 		
 		if DEBUG_BOXES then
 			task.spawn(function()
@@ -133,7 +133,7 @@ function Attack.Enter(noob, attackName)
 			end)
 		end
 
-		if checks == HITBOX_CHECKS then
+		if checks >= HITBOX_CHECKS then
 			connection:Disconnect()
 			connection = nil
 			return
@@ -141,7 +141,7 @@ function Attack.Enter(noob, attackName)
 	end)
 	
 	task.delay(track.Length, function()
-		finish(noob, attackName)
+		finish(noob)
 	end)
 
 	return true
@@ -151,7 +151,7 @@ function Attack.Loop(self)
 	Utils.cancelThread(self, "AttackThread")
 
 	self.AttackThread = task.spawn(function()
-		while self:IsInState("Attacking") and self.Target and self.Target.Parent and self.Humanoid.Health > 0 do
+		while self:IsInState("Attacking") do
 			local targetRoot = self.Target:FindFirstChild("HumanoidRootPart")
 			local noobRoot = self.Model:FindFirstChild("HumanoidRootPart")
 			if not targetRoot or not noobRoot then break end
@@ -164,7 +164,7 @@ function Attack.Loop(self)
 			end
 			task.wait(CONFIG.AttackCooldown)
 		end
-
+		
 		self.AttackThread = nil
 	end)
 end

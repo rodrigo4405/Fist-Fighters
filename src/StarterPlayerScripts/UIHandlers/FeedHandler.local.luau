@@ -12,29 +12,39 @@ local template = history:WaitForChild("Template")
 
 local MAX_LINES = 5
 local DISPLAY_TIME = 10
+
 local lineCount = 0
 local layoutOrder = 0
 local queue = {}
 
 local function addLine(richText, highlight)
+	if not richText then return end
 	if lineCount >= MAX_LINES then
 		table.insert(queue, {richText, highlight})
 		return
 	end
+
 	local line = template:Clone()
-	line.Message.RichText = true
-	line.Message.Text = richText
+	local label = line:WaitForChild("Message")
+	label.RichText = true
+	label.Text = richText
+
 	line.LayoutOrder = layoutOrder
 	line.Visible = true
 	line.Parent = history
+
 	lineCount += 1
 	layoutOrder += 1
+
 	task.delay(DISPLAY_TIME, function()
 		if line.Parent then
 			line:Destroy()
 			lineCount -= 1
+
 			local nextLine = table.remove(queue, 1)
-			if nextLine then addLine(nextLine[1], nextLine[2]) end
+			if nextLine then
+				addLine(nextLine[1], nextLine[2])
+			end
 		end
 	end)
 end
@@ -63,8 +73,12 @@ end
 
 FeedEvent.OnClientEvent:Connect(function(killer, victim, damage, streak)
 	if not killer or not victim then return end
+	
+	print(killer, victim)
+	
 	damage = damage or 100
 	local highlight = killer == player
+	
 	addLine(formatKillFeed(killer, victim, damage), highlight)
 	if streak and streak ~= 0 and math.fmod(streak, 5) == 0 then
 		addLine(formatKillstreak(killer, streak), highlight)

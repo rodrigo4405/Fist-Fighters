@@ -8,6 +8,17 @@ local RESET_DELAY = 2
 local lastSide = "Right Arm"
 local lastAttackTime = 0
 
+function Utils.SetName(self)
+	local names = CONFIG.Names
+	local name
+	if not names or #names == 0 then 
+		name = "Noob"
+	else name = "Noob " .. names[math.random(1, #names)] end
+
+	self.Name = name
+	self.Humanoid.DisplayName = name
+end
+
 function Utils.GetAttackSide()
 	local now = os.clock()
 	if now - lastAttackTime >= RESET_DELAY then

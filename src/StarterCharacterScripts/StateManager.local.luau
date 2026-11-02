@@ -193,9 +193,9 @@ CombatEvent.OnClientEvent:Connect(function(gotParried, attackSide)
 		Movement.SetState(ctx, "Stunned")
 	
 		if attackSide == "Right Arm" then
-			track = AnimationManager.PlayAnimation(hitReactionRightAnimation, Enum.AnimationPriority.Action4, 1, 1.5, false)
+			track = AnimationManager.PlayAnimation(hitReactionRightAnimation, Enum.AnimationPriority.Action2, 1, 1.5, false)
 		elseif attackSide == "Left Arm" then
-			track = AnimationManager.PlayAnimation(hitReactionLeftAnimation, Enum.AnimationPriority.Action4, 1, 1.5, false)
+			track = AnimationManager.PlayAnimation(hitReactionLeftAnimation, Enum.AnimationPriority.Action2, 1, 1.5, false)
 		end
 		
 		task.delay(track.Length // 3, function()

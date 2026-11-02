@@ -9,10 +9,12 @@ local KillHandler = require(ServerScriptService.KillHandler)
 local CombatEvent = ReplicatedStorage.RemoteEvents.CombatEvent
 local BlockStrengthEvent = ReplicatedStorage.RemoteEvents.BlockStrengthEvent
 
-local noobFolder = Workspace:WaitForChild("Noobs", 10)
+local noobFolder = Workspace:WaitForChild("Noobs", 30)
 
 local function isNoob(model: Model): boolean
 	if not model then return false end
+	if not noobFolder then return false end
+	
 	return model:IsDescendantOf(noobFolder)
 end
 

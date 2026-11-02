@@ -56,7 +56,7 @@ function Attack.Enter(ctx, attackName)
 	local anim = (side == "Right Arm") and config.RightAnim or config.LeftAnim
 
 	SoundManager.PlaySFX(SoundManager.SFX.Attacks.Swing, armPart)
-	local track = AnimationManager.PlayAnimation(anim, Enum.AnimationPriority.Action2, 1, 1, false)
+	local track = AnimationManager.PlayAnimation(anim, Enum.AnimationPriority.Action3, 1, 1, false)
 
 	if not track then 
 		finish(ctx, attackName)

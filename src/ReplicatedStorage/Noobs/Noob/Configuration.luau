@@ -17,9 +17,9 @@ return {
 	
 	AggroRange = 40,
 	ChaseRange = 80,
-	ChasePathRate = 0.5,
+	ChasePathRate = 0.2,
 	
-	UpdateRate = 0.5,
+	UpdateRate = 0.2,
 	
 	RoamRate = 2,
 	RoamRadius = 15,
@@ -29,5 +29,9 @@ return {
 	
 	Combat = CombatConfig,
 	
-	CorpseDespawn = 3
+	CorpseDespawn = 3,
+	
+	Names = {
+		"Joe", "Midstrii", "John", "Mario", "Luigi", "Bobby", "Tom", "Jerry", "Rony", "Charlie"
+	}
 }

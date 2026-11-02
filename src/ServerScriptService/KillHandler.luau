@@ -61,7 +61,6 @@ function KillHandler.AwardKill(victim, victimIsNoob)
 		playerStore:IncrementSession(victim, "Deaths", 1)
 	end
 
-	print(tracking)
 	if not tracking then
 		local character = victimIsNoob and victim or victim.Character
 		return Ragdoll.Play(character)
@@ -74,7 +73,7 @@ function KillHandler.AwardKill(victim, victimIsNoob)
 	for _, info in pairs(tracking) do
 		if now - info.Time > CREDIT_WINDOW then continue end
 		if info.IsNoob then
-			if not info.Entity or not info.Entity.Parent then continue end
+			if not info.Entity or not info.Entity.Model then continue end
 		else
 			if info.Entity.Parent ~= Players then continue end
 		end
@@ -117,7 +116,7 @@ function KillHandler.AwardKill(victim, victimIsNoob)
 	return true
 end
 
-function KillHandler.ProcessDamage(attacker, targetHumanoid, damage, victimIsNoob)
+function KillHandler.ProcessDamage(attacker: Player, targetHumanoid: Humanoid, damage: number, victimIsNoob: boolean?)
 	if not attacker or not targetHumanoid or targetHumanoid.Health <= 0 or damage <= 0 then return end
 	targetHumanoid:TakeDamage(damage)
 	KillHandler.RegisterAttacker(attacker, targetHumanoid.Parent, damage, false, victimIsNoob)
@@ -154,6 +153,8 @@ end
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
 
-for _, player in ipairs(Players:GetPlayers()) do task.spawn(onPlayerAdded, player) end
+for _, player in ipairs(Players:GetPlayers()) do 
+	task.spawn(onPlayerAdded, player)
+end
 
 return KillHandler
